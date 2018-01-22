@@ -103,7 +103,7 @@ main(int argc, char** argv)
 		{
 			for(int col = 0; col < mask_side; ++col)
 			{
-				// Distance of mask[row, col] from the center of the mask
+				// Manhattan distance of mask[row, col] from the center of the mask
 				int distance = ABS(col-blur_radius) + ABS(row-blur_radius);
 				
 				if(distance <= blur_radius)

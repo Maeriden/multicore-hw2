@@ -5,10 +5,10 @@ static
 size_t
 win32_get_file_size(const char* path)
 {
-	WIN32_FILE_ATTRIBUTE_DATA attrs = {};
+	WIN32_FILE_ATTRIBUTE_DATA attrs;
 	BOOL success = GetFileAttributesEx(path, GetFileExInfoStandard, &attrs);
-	size_t size = (attrs.nFileSizeHigh << 32) | (attrs.nFileSizeLow)
-	return size;
+	LARGE_INTEGER size = {attrs.nFileSizeHigh, attrs.nFileSizeLow};
+	return size.QuadPart;
 }
 
 
