@@ -25,7 +25,9 @@
 // ---------------------------------------------------------------------
 // __read_line
 // ---------------------------------------------------------------------
-static int __read_line(FILE* fp, char* line, size_t size) {
+static
+int
+__read_line(FILE* fp, char* line, size_t size) {
 	do {
 		if (fgets(line, size, fp) == NULL) return -1;
 	}
@@ -37,7 +39,8 @@ static int __read_line(FILE* fp, char* line, size_t size) {
 // ---------------------------------------------------------------------
 // pgm_load
 // ---------------------------------------------------------------------
-int pgm_load(unsigned char** img, int* rows, int* cols, const char* filename)
+int
+pgm_load(unsigned char** img, int* rows, int* cols, const char* filename)
 {
 	char line[LINE_MAX];
 	FILE* fp = fopen(filename, "r");
@@ -79,7 +82,8 @@ err:
 // ---------------------------------------------------------------------
 // pgm_save
 // ---------------------------------------------------------------------
-int pgm_save(unsigned char* img, int rows, int cols, const char* filename)
+int
+pgm_save(unsigned char* img, int rows, int cols, const char* filename)
 {
 	int i;
 	FILE* fp = fopen(filename, "w");

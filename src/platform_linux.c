@@ -18,7 +18,7 @@ static
 char*
 linux_get_executable_path(const char* argv0)
 {
-	pid_t pid  = getpid();
+	pid_t pid      = getpid();
 	char  proc[32] = {0};
 	sprintf(proc, "/proc/%d/exe", pid);
 	

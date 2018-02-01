@@ -2,3 +2,7 @@ bin/
 lib/
 obj/
 
+.gdb_history
+debug.sh
+run.sh
+*.out

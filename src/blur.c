@@ -4,28 +4,80 @@
 #include "platform.c"
 
 
-#define ENABLE_USE_IMAGE2D 0
-
 #ifndef PROGRAM_NAME
 	#define PROGRAM_NAME "blur"
 #endif
+
+#ifndef ENABLE_USE_IMAGE2D
+	#define ENABLE_USE_IMAGE2D 0
+#endif
+
+
+static
+void
+blur(unsigned char* source,
+     int source_w,
+     int source_h,
+     unsigned char* target,
+     float* mask,
+     int mask_radius)
+{
+	int mask_side = 2*mask_radius + 1;
+	
+	for(int y = 0; y < source_h; ++y)
+	{
+		for(int x = 0; x < source_w; ++x)
+		{
+			int   n = 0;
+			float c = 0;
+			
+			for(int row = 0; row < mask_side; ++row)
+			{
+				for(int col = 0; col < mask_side; ++col)
+				{
+					int p_x = x - mask_radius + col;
+					int p_y = y - mask_radius + row;
+					
+					if(0 <= p_x && p_x < source_w
+					&& 0 <= p_y && p_y < source_h)
+					{
+						if(mask[row*mask_side + col] > 0)
+						{
+							c += source[p_y*source_w + p_x] * mask[row*mask_side + col];
+							n += 1;
+						}
+					}
+				}
+			}
+			
+			if(n > 0)
+			{
+				unsigned int  color = (unsigned int) c / n;
+				unsigned char pixel = (unsigned char)color;
+				target[y*source_w + x] = pixel;
+			}
+		}
+	}
+}
 
 
 int
 main(int argc, char** argv)
 {
+	int         do_parallel = 0;
 	int         blur_radius = 1;
 	const char* source_path = NULL;
 	const char* output_path = NULL;
 	
 	// Parse command line arguments
 	{
-		struct arg_lit*  argt_help        = arg_litn("h?", "help", 0, 1, "Print this help and exit");
-		struct arg_int*  argt_blur_radius = arg_intn("l", "level", "{1,2,3,4}", 0, 1, "Blur level (default: 1)");
-		struct arg_file* argt_source_file = arg_filen(NULL, NULL, "SOURCE", 1, 1, "Source image path");
-		struct arg_file* argt_output_file = arg_filen(NULL, NULL, "OUTPUT", 1, 1, "Output image path");
+		struct arg_lit*  argt_help        = arg_litn("h?",  "help",               0, 1, "Print this help and exit");
+		struct arg_lit*  argt_do_parallel = arg_litn("p",   "parallel",           0, 1, "Use parallel algorithm");
+		struct arg_int*  argt_blur_radius = arg_intn("l",   "level",    "N",      0, 1, "Blur level (default: 1)");
+		struct arg_file* argt_source_file = arg_filen(NULL, NULL,       "SOURCE", 1, 1, "Source image path");
+		struct arg_file* argt_output_file = arg_filen(NULL, NULL,       "OUTPUT", 1, 1, "Output image path");
 		struct arg_end*  argt_end         = arg_end(20);
-		void*            argt_argtable[]  = {argt_help, argt_blur_radius, argt_source_file, argt_output_file, argt_end};
+		void*            argt_argtable[]  = {argt_help, argt_do_parallel, argt_blur_radius, argt_source_file, argt_output_file, argt_end};
 		
 		if(arg_nullcheck(argt_argtable) != 0)
 		{
@@ -52,6 +104,7 @@ main(int argc, char** argv)
 			return 1;
 		}
 		
+		if(argt_do_parallel->count > 0) do_parallel = TRUE;
 		if(argt_blur_radius->count > 0) blur_radius = argt_blur_radius->ival[0];
 		if(argt_source_file->count > 0) source_path = argt_source_file->filename[0];
 		if(argt_output_file->count > 0) output_path = argt_output_file->filename[0];
@@ -112,6 +165,26 @@ main(int argc, char** argv)
 					blur_mask[row*mask_side + col] = 0;
 			}
 		}
+	}
+	
+	
+	// If using sequential function, call that and exit
+	if(do_parallel == FALSE)
+	{
+		blur(source_image, source_image_size[0], source_image_size[1],
+		     output_image, blur_mask, blur_radius);
+		
+		fprintf(stderr, "Writing %s...", output_path);
+		int error = pgm_save(output_image, output_image_size[1], output_image_size[0], output_path);
+		if(error)
+			fputs(" error\n", stderr);
+		fputs(" done\n", stderr);
+		
+		free(output_image);
+		free(source_image);
+		free(blur_mask);
+		
+		return error;
 	}
 	
 	
@@ -348,10 +421,6 @@ main(int argc, char** argv)
 		CL_ASSERT(error == CL_SUCCESS);
 		
 		error = clSetKernelArg(kernel, arg_index++, sizeof(cl_output_image), &cl_output_image);
-		CL_ASSERT(error == CL_SUCCESS);
-		error = clSetKernelArg(kernel, arg_index++, sizeof(cl_output_image_w), &cl_output_image_w);
-		CL_ASSERT(error == CL_SUCCESS);
-		error = clSetKernelArg(kernel, arg_index++, sizeof(cl_output_image_h), &cl_output_image_h);
 		CL_ASSERT(error == CL_SUCCESS);
 		
 		error = clSetKernelArg(kernel, arg_index++, sizeof(cl_blur_mask), &cl_blur_mask);

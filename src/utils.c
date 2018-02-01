@@ -50,58 +50,6 @@ strconcat(const char* s1, const char* s2)
 
 
 static
-void
-debug_blur(unsigned char* source,
-           int source_w,
-           int source_h,
-           unsigned char* target,
-           int target_w,
-           int target_h,
-           unsigned char* mask,
-           int mask_radius)
-{
-	for(int y = 0; y < source_h; ++y)
-	{
-		for(int x = 0; x < source_w; ++x)
-		{
-			if(0 + mask_radius <= x && x < source_w-mask_radius
-			&& 0 + mask_radius <= y && y < source_h-mask_radius)
-			{
-				int mask_side = 2*mask_radius + 1;
-				int c         = 0;
-				int n         = 0;
-				
-				for(int row = 0; row < mask_side; ++row)
-				{
-					for(int col = 0; col < mask_side; ++col)
-					{
-						int px = x + col - mask_radius;
-						int py = y + row - mask_radius;
-						
-						if(0 <= px && px < source_w
-						&& 0 <= py && py < source_h)
-						{
-							if(mask[row*mask_side + col] > 0)
-							{
-								c += source[py*source_w + px] * mask[row*mask_side + col];
-								n += 1;
-							}
-						}
-					}
-				}
-				
-				if(n > 0)
-				{
-					unsigned char color = (unsigned char)((float)c / (float)n);
-					target[y*source_w + x] = color;
-				}
-			}
-		}
-	}
-}
-
-
-static
 const char*
 clGetErrorString(int error)
 {

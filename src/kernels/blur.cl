@@ -4,8 +4,6 @@ blur(__global   unsigned char* source,
                 int source_w,
                 int source_h,
      __global   unsigned char* target,
-                int target_w,
-                int target_h,
      __constant float* mask,
                 int mask_radius)
 {
